@@ -1,7 +1,7 @@
 CC = g++
 MPICC = mpic++
 
-CFLAGS  = -g -Wall
+CFLAGS  = -g  -std=c++0x
 
 SEQ2D = kmeans_2d_sequential
 PAR2D = kmeans2DParallel

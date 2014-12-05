@@ -1,6 +1,8 @@
 #include "kmeans2D.h"
 #include <numeric>
 #include <iostream>
+#include <limits>
+
 using namespace std;
 
 

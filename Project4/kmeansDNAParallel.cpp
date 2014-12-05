@@ -7,6 +7,7 @@
 
 #include "kmeansDNA.h"
 #include "mpi.h"
+#include <limits>
 #include <iostream>
 
 using namespace std;
@@ -112,14 +113,12 @@ static vector<int> kmeans(const vector<string> &dnas, int k) {
 				centers[j] = buffer;
 			}
 		}
-
 		MPI::COMM_WORLD.Barrier();
 
 		if (equal(centers.begin(), centers.end(), prevCenters.begin())) {
 			break;
 		}
 		prevCenters = centers;
-
 		vector<vector<Bases> > sumClusters(k, vector<Bases>(dnaLength));
 		for (int i = startIndex; i < endIndex; i++) {
 			int min_dis = numeric_limits<int>::max();
@@ -133,7 +132,7 @@ static vector<int> kmeans(const vector<string> &dnas, int k) {
 			}
 			belonging[i] = belong;
 			for (int j = 0; j < dnaLength; j++) {
-				int idx = dnas[i][j];
+				int idx = get_idx(dnas[i][j]);
 				sumClusters[belong][j].increase(idx);
 			}
 		}
@@ -144,10 +143,10 @@ static vector<int> kmeans(const vector<string> &dnas, int k) {
 		}
 		if (isMaster(rank)) {
 			vector<vector<Bases> > aggrSumClusters(k, vector<Bases>(dnaLength));
-			vector<int> aggrPointsPerCluster(k, 0);
 			for (int i = 0; i < k; i++) {
 				for (int j = 0; j < dnaLength; j++) {
 					aggrSumClusters[i][j] += sumClusters[i][j];
+					//cout << "cluster " << i << " dna " << j << " count " << aggrSumClusters[i][j].get_max() << endl;
 				}
 			}
 			for (int i = 0; i < size; i++) {
@@ -164,7 +163,6 @@ static vector<int> kmeans(const vector<string> &dnas, int k) {
 					}
 				}
 			}
-
 			for (int i = 0; i < centers.size(); ++i) {
 				string center;
 				for (int j = 0; j < dnas[0].size(); ++j) {
@@ -175,6 +173,7 @@ static vector<int> kmeans(const vector<string> &dnas, int k) {
 		}
 		MPI::COMM_WORLD.Barrier();
 	}
+
 	delete[] buffer;
 	if (!isMaster(rank)) {
 		MPI::COMM_WORLD.Send(&belonging[startIndex], endIndex - startIndex, MPI::INT, MASTER_RANK, DEFAULT_TAG);
